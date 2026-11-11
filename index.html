@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="fleet_fuel_manager.css">
+    <style>
+    :root {
+  --page-bg: #eef2ff;
+  --card-bg: #ffffff;
+  --text: #1e1b4b;
+  --text-light: #5b5a8a;
+  --border: #dcdff7;
+  --main: #4f46e5;
+  --main-dark: #3730a3;
+  --accent: #f43f5e;
+  --danger: #e11d48; 
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  background: var(--page-bg);
+  color: var(--text);
+}
+/* header */
+header {
+  background: linear-gradient(135deg, var(--main), var(--main-dark));
+  color: white;
+  padding: 26px 20px 20px 20px;
+  border-radius: 0 0 18px 18px;
+}
+header h1 {
+  margin: 0 0 22px 0;
+  font-size: 30px;
+  font-weight: 800;
+}
+nav button {
+  background: transparent;
+  border: 0;
+  color: white;
+  padding: 13px 45px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+/* The tab that is currently open */
+nav button.active {
+  background: rgba(255, 255, 255, 0.25);
+}
+main {
+  max-width: 1150px;
+  margin: auto;
+  padding: 16px;
+}
+/*  boxes  */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.card h3 {
+  margin: 0 0 10px 0;
+}
+/*  Forms and filter bar */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+.row label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--text-light);
+}
+input,select,button {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+}
+button {
+  cursor: pointer;
+}
+/* Coloured (main) buttons */
+button.main-btn {
+  background: var(--main);
+  border-color: var(--main);
+  color: white;
+}
+/* ----- 8 boxes ----- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.kpi {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 14px;
+  padding: 16px;
+}
+.kpi small {
+  color: var(--text-light);
+}
+.kpi b {
+  display: block;
+  margin-top: 4px;
+  font-size: 20px;
+  color: var(--main);
+}
+/* -----  charts  ----- */
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 800px) {
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* ----- Tables ----- */
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+th {
+  font-size: 12px;
+  color: var(--text-light);
+}
+/* ----- Show only one screen at a time ----- */
+.screen {
+  display: none;
+}
+.screen.active {
+  display: block;
+}
+.light-text {
+  color: var(--text-light);
+}
+.bad {
+  color: var(--danger);
+}
+/* Dummy placeholder  */
+.date-wrap {
+  position: relative;
+  display: block;
+}
+.date-wrap.empty::after {
+  content: attr(data-placeholder);
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 1px;
+  right: 34px;
+  display: flex;
+  align-items: center;
+  padding-left: 9px;
+  background: var(--card-bg);
+  color: var(--text-light);
+  pointer-events: none;
+}
+    </style>
+</head>
+<body>
+ <header>
+    <h1>Fleet Fuel &amp; Expense Manager</h1>
+           <!-- Menu -->
+      <nav>
+      <button data-tab="dashboard" class="active">Dashboard</button>
+      <button data-tab="vehicles">Vehicles</button>
+      <button data-tab="refuelling">Refuelling</button>
+      <button data-tab="expenses">Expenses</button></nav></header>
+      <main>
+    <!-- Filter bar  -->
+    <div class="card row">
+      <label> Vehicle<select id="filterVehicle"></select> </label>
+      <label> From<span class="date-wrap" data-placeholder="Select date">
+          <input type="date" id="filterFrom"></span> </label>
+      <label> To<span class="date-wrap" data-placeholder="Select date">
+          <input type="date" id="filterTo"> </span></label>
+      <button id="clearFilters">Clear filters</button>
+      <button id="exportRefuels" class="main-btn">Export refuels CSV</button>
+      <button id="exportExpenses" class="main-btn">Export expenses CSV</button>
+      <button id="printBtn">Print report</button>
+      <button id="resetDemo">Reset demo data</button></div>
+
+                       <!--  DASHBOARD  -->
+     <section class="screen active" id="dashboard">
+      <!-- The 8 boxes are filled by using JavaScript -->
+      <div class="kpi-grid" id="kpiBox"></div>
+      <div class="chart-grid">
+        <div class="card">
+          <h3>Average fuel economy by vehicle (km/L)</h3>
+          <canvas id="chartEconomy"></canvas> </div>
+        <div class="card"><h3>Monthly fuel cost trend (Rs)</h3>
+          <canvas id="chartTrend"></canvas> </div></div>
+      <div class="card"> <h3>Vehicle summary</h3>
+        <div class="table-wrap" id="summaryTable"></div></div></section>
+
+                       <!-- FORM FOR MAINTENANCE-->
+    <section class="screen" id="vehicles">
+      <div class="card">
+        <h3 id="vehicleTitle">Add vehicle</h3>
+        <form id="vehicleForm" class="row">
+          <input type="hidden" id="vehicleId">
+          <label> Registration / ID<input id="vehicleReg" required></label>
+          <label> Make / model<input id="vehicleModel" required></label>
+          <label> Type<select id="vehicleType">
+              <option>Hatchback</option>
+              <option>Sedan</option>
+              <option>SUV</option>
+              <option>Pickup</option>
+              <option>Van</option>
+              <option>Truck</option>
+              <option>Motorcycle</option></select></label>
+          <label> Fuel<select id="vehicleFuel">
+              <option>Petrol</option>
+              <option>Diesel</option>
+              <option>CNG</option>
+              <option>Hybrid</option> </select></label>
+          <label> Notes (optional) <input id="vehicleNotes"> </label>
+          <button class="main-btn">Save vehicle</button>
+          <button type="button" id="vehicleCancel">Cancel</button></form></div>
+      <div class="card table-wrap" id="vehicleList"></div> </section>
+
+                             <!-- REFUELLING PAGE -->
+    <section class="screen" id="refuelling">
+      <div class="card">
+        <h3>Record refuelling</h3>
+        <form id="refuelForm" class="row">
+          <label> Vehicle <select id="refuelVehicle" required></select></label>
+          <label> Date &amp; time <span class="date-wrap" data-placeholder="Select date and time">
+            <input type="datetime-local" id="refuelDate" required></span></label>
+          <label> Odometer (km)<input type="number" id="refuelOdo" min="0" step="1" required></label>
+          <label> Litres<input type="number" id="refuelLitres" min="0" step="0.01" required></label>
+          <label> Price / litre (Rs)<input type="number" id="refuelPrice" value="377" min="0" step="0.01" required></label>
+          <label> Receipt total (Rs) <input type="number" id="refuelTotal" min="0" step="1"></label>
+          <label> Full tank?<select id="refuelFull">
+              <option value="yes">Yes</option>
+              <option value="no">No (partial)</option> </select></label>
+          <button class="main-btn">Add record</button>
+          <span id="refuelCalc" class="light-text"></span> </form> </div>
+      <div class="card table-wrap" id="refuelList"></div></section>
+                 <!-- FORM FOR MAINTENANCE-->
+      <section class="screen" id="expenses">
+      <div class="card">
+        <h3>Add Maintenance / Expense</h3>
+        <form id="expenseForm" class="row">
+          <label> Vehicle <select id="expenseVehicle" required></select></label>
+          <label> Date <span class="date-wrap" data-placeholder="Select date">
+              <input type="date" id="expenseDate" required>
+            </span></label>
+          <label> Category <select id="expenseCategory">
+              <option>Maintenance</option>
+              <option>Tyres</option>
+              <option>Insurance</option>
+              <option>Tolls / parking</option>
+              <option>Repairs</option>
+              <option>Other</option>
+            </select></label>
+          <label> Amount (Rs) <input type="number" id="expenseAmount" min="1" required></label>
+          <label> Notes
+            <input id="expenseNotes"> </label>
+          <button class="main-btn">Add expense</button>
+        </form></div>
+      <div class="card table-wrap" id="expenseList"></div>
+    </section>
+  </main>
+    <script>
+        /* All data is in "data" (data.vehicles, data.refuels, data.expenses). update() saves it, renderAll() redraws. "x => x.id === id" = function (x) { return x.id === id; } */
+    /* ---------- 1. SETTINGS AND HELPERS ---------- */
+    const STORAGE_KEY = 'fleetFuelSimple1';
+    const PRICE = 377;                 // default fuel price, Rs per litre
+    let randomSeed = 7;                // makes the same demo numbers every time
+    let data = loadData();
+    function byId(id) { return document.getElementById(id); }
+    function num(n, d = 0) { return Number(n).toLocaleString('en-PK', { minimumFractionDigits: d, maximumFractionDigits: d }); }
+    function safe(text) { return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+    function getVehicle(id) { return data.vehicles.find(v => v.id === id) || { reg: '?', model: '' }; }
+    function sumOf(list, field) { return list.reduce((total, item) => total + item[field], 0); }   // adds one field of a list
+    function table(headings, rows) {   // builds an HTML table from a list of rows
+      return '<table><tr><th>' + headings.join('</th><th>') + '</th></tr>' + rows.map(r => '<tr><td>' + r.join('</td><td>') + '</td></tr>').join('') + '</table>';
+    }
+    function update() {                // save in the browser, then draw everything again
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (error) { }
+      renderAll();
+    }
+    /* ---------- 2. LOAD AND DEMO DATA ---------- */
+    function loadData() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || demoData(); } catch (error) { return demoData(); } }
+    function random() {                // gives the same "random" numbers in the same order
+      randomSeed = (randomSeed * 16807) % 2147483647; return randomSeed / 2147483647;
+    }
+    function demoData() {              // 5 vehicles, 12 refuelling records each, 2 expenses each
+      const demo = { vehicles: [], refuels: [], expenses: [] };
+      const cars = [                   // registration, model, type, fuel, km per litre, start odometer
+        ['KHI-AB-1234', 'Suzuki Alto', 'Hatchback', 'Petrol', 17, 18000],
+        ['KHI-BC-5521', 'Suzuki Cultus', 'Hatchback', 'Petrol', 14, 32000],
+        ['KHI-CD-7788', 'Honda City', 'Sedan', 'Petrol', 12.5, 41000],
+        ['KHI-DE-9012', 'Toyota Corolla', 'Sedan', 'Petrol', 11, 56000],
+        ['KHI-EF-3456', 'Toyota Hilux', 'Pickup', 'Diesel', 8.5, 74000]
+      ];
+      cars.forEach((car, i) => {
+        const id = 'v' + (i + 1);
+        let odometer = car[5];
+        const date = new Date(2025, 10, 3 + i * 2, 12);              // first fill: November 2025
+        demo.vehicles.push({ id: id, reg: car[0], model: car[1], type: car[2], fuel: car[3], notes: '', active: true });
+        for (let k = 0; k < 12; k++) {
+          const km = (k === 0) ? 0 : Math.round(330 + random() * 260);
+          const litres = Number(((k === 0) ? 35 + random() * 10 : km / car[4] * (0.93 + random() * 0.14)).toFixed(2));
+          odometer += km;
+          demo.refuels.push({ id: id + 'r' + k, vehicleId: id, dateTime: date.toISOString().slice(0, 10) + 'T09:30', odometer: odometer,
+                              litres: litres, price: PRICE, total: Math.round(litres * PRICE), fullTank: true });
+          date.setDate(date.getDate() + 27 + Math.floor(random() * 8));   // next fill after 27-34 days
+        }
+        demo.expenses.push({ id: id + 'e1', vehicleId: id, date: '2026-03-15', category: 'Maintenance', amount: Math.round(6000 + random() * 9000), notes: 'Oil change & service' });
+        demo.expenses.push({ id: id + 'e2', vehicleId: id, date: '2026-07-10', category: 'Tyres', amount: Math.round(18000 + random() * 30000), notes: 'Tyre replacement' });
+      });
+      return demo;
+    }
+    /* ---------- 3. CALCULATIONS (raw records -> useful information) ----------
+       Fuel economy = "full tank to full tank" method: km since the last FULL tank / litres bought since then.
+       The first record of a vehicle has no earlier odometer, so its distance and km/L stay empty (N/A). */
+    function calculateRefuels() {
+      const result = [];
+      data.vehicles.forEach(vehicle => {
+        const records = data.refuels.filter(r => r.vehicleId === vehicle.id);
+        records.sort((a, b) => a.dateTime.localeCompare(b.dateTime) || a.odometer - b.odometer);   // oldest first
+        let previous = null, lastFull = null;      // the record before this one, odometer at the last full tank
+        let litresSince = 0, costSince = 0;        // litres bought and money spent since the last full tank
+        records.forEach(record => {
+          const row = Object.assign({}, record, { distance: null, tripKm: null, tripLitres: null, economy: null, costPerKm: null });
+          if (previous) row.distance = record.odometer - previous.odometer;
+          if (lastFull !== null) litresSince += record.litres;
+          if (lastFull !== null) costSince += record.total;
+          if (record.fullTank) {
+            if (lastFull !== null && record.odometer > lastFull) {
+              row.tripKm = record.odometer - lastFull;
+              row.tripLitres = litresSince;
+              row.economy = row.tripKm / litresSince;
+              row.costPerKm = costSince / row.tripKm;
+            }
+            lastFull = record.odometer;            // start counting again from this full tank
+            litresSince = 0;
+            costSince = 0;
+          }
+          previous = record;
+          result.push(row);
+        });
+      });
+      return result;
+    }
+    function passesFilter(item) {      // true if a record should be shown with the current filters
+      const day = (item.dateTime || item.date).slice(0, 10);
+      if (byId('filterVehicle').value && item.vehicleId !== byId('filterVehicle').value) return false;
+      if (byId('filterFrom').value && day < byId('filterFrom').value) return false;
+      if (byId('filterTo').value && day > byId('filterTo').value) return false;
+      return true;
+    }
+    /* ---------- 4. DRAWING THE SCREENS ---------- */
+    function renderAll() {
+      const active = data.vehicles.filter(v => v.active);
+      [['filterVehicle', data.vehicles, '<option value="">All vehicles</option>'], ['refuelVehicle', active, ''], ['expenseVehicle', active, '']].forEach(item => {
+        const select = byId(item[0]);
+        const oldValue = select.value;
+        select.innerHTML = item[2] + item[1].map(v => '<option value="' + v.id + '">' + safe(v.reg) + ' - ' + safe(v.model) + '</option>').join('');
+        select.value = oldValue;
+      });
+      showDashboard();
+      showLists();
+      document.querySelectorAll('.date-wrap').forEach(wrap => wrap.classList.toggle('empty', wrap.querySelector('input').value === ''));   // "Select date" text
+    }
+    function showDashboard() {
+      const rows = calculateRefuels().filter(passesFilter);
+      const totals = {};               // numbers of each vehicle, added up
+      rows.forEach(row => {
+        if (!totals[row.vehicleId]) totals[row.vehicleId] = { id: row.vehicleId, count: 0, litres: 0, cost: 0, km: 0, tripLitres: 0, tripCost: 0 };
+        const sum = totals[row.vehicleId];
+        sum.count += 1;
+        sum.litres += row.litres;
+        sum.cost += row.total;
+        if (row.tripKm) {
+          sum.km += row.tripKm;
+          sum.tripLitres += row.tripLitres;
+          sum.tripCost += row.costPerKm * row.tripKm;
+        }
+      });
+      const list = Object.values(totals);
+      const ranked = list.filter(sum => sum.tripLitres > 0).sort((a, b) => b.km / b.tripLitres - a.km / a.tripLitres);   // best first
+      const best = ranked[0], worst = ranked[ranked.length - 1];
+      const top = list.slice().sort((a, b) => b.litres - a.litres)[0];
+      const km = sumOf(list, 'km');
+      const name = (sum, text) => sum ? getVehicle(sum.id).reg + ' (' + text + ')' : '-';
+      const boxes = [                  // the 8 summary boxes: [title, value]
+        ['Total km served', num(km) + ' km'],
+        ['Total fuel consumed', num(sumOf(list, 'litres'), 2) + ' L'],
+        ['Total fuel expenditure', 'Rs ' + num(sumOf(list, 'cost'))],
+        ['Overall cost / km', km ? 'Rs ' + num(sumOf(list, 'tripCost') / km, 2) : '-'],
+        ['Most economical', best ? name(best, num(best.km / best.tripLitres, 2) + ' km/L') : '-'],
+        ['Least economical', worst ? name(worst, num(worst.km / worst.tripLitres, 2) + ' km/L') : '-'],
+        ['Highest fuel consumer', top ? name(top, num(top.litres, 2) + ' L') : '-'],
+        ['Other expenses', 'Rs ' + num(sumOf(data.expenses.filter(passesFilter), 'amount'))]
+      ];
+      byId('kpiBox').innerHTML = boxes.map(b => '<div class="kpi"><small>' + b[0] + '</small><b>' + safe(b[1]) + '</b></div>').join('');
+      byId('summaryTable').innerHTML = table(['Vehicle', 'Refuels', 'Litres', 'Fuel cost', 'Valid km', 'km/L', 'Rs/km'],
+        list.map(sum => [safe(getVehicle(sum.id).reg + ' ' + getVehicle(sum.id).model), sum.count, num(sum.litres, 2), 'Rs ' + num(sum.cost), num(sum.km),
+                         sum.tripLitres ? num(sum.km / sum.tripLitres, 2) : 'N/A', sum.km ? num(sum.tripCost / sum.km, 2) : 'N/A']));
+      drawChart('chartEconomy', 'bar', ranked.map(sum => getVehicle(sum.id).reg.replace('KHI-', '')), ranked.map(sum => Number((sum.km / sum.tripLitres).toFixed(2))), '#4f46e5');
+      const months = {};               // for example { "2026-03": 70000 }
+      rows.forEach(row => months[row.dateTime.slice(0, 7)] = (months[row.dateTime.slice(0, 7)] || 0) + row.total);
+      const names = Object.keys(months).sort();
+      drawChart('chartTrend', 'line', names, names.map(n => months[n]), '#f43f5e');
+    }
+    function drawChart(canvasId, type, labels, values, color) {   // draws a bar or line chart by hand on a <canvas>; "pen" is the drawing tool
+      const canvas = byId(canvasId);
+      canvas.width = Math.max(260, canvas.parentElement.clientWidth - 32);
+      const pen = canvas.getContext('2d');
+      pen.font = '12px system-ui, sans-serif';
+      if (values.length === 0) return pen.fillText('No data', 10, 20);
+      const left = 55, top = 16, width = canvas.width - left - 14, height = 204;      // the drawing area
+      const maxValue = Math.max(...values) * 1.1, slot = width / values.length;       // slot = space for one bar / point
+      const points = values.map((value, i) => ({ x: left + slot * i + slot / 2, y: top + height - height * value / maxValue }));
+      pen.textAlign = 'right';
+      pen.textBaseline = 'middle';
+      for (let i = 0; i <= 4; i++) {                                                  // grey lines with numbers on the left
+        pen.fillStyle = '#dcdff7';
+        pen.fillRect(left, top + height - height * i / 4, width, 1);
+        pen.fillStyle = '#5b5a8a';
+        pen.fillText(num(maxValue * i / 4, maxValue < 50 ? 1 : 0), left - 6, top + height - height * i / 4);
+      }
+      pen.fillStyle = color;
+      pen.strokeStyle = color;
+      pen.lineWidth = 2.5;
+      pen.beginPath();
+      points.forEach((p, i) => {                                                      // the bars, or the line
+        if (type === 'bar') pen.fillRect(p.x - Math.min(slot * 0.3, 30), p.y, Math.min(slot * 0.6, 60), top + height - p.y);
+        else if (i === 0) pen.moveTo(p.x, p.y);
+        else pen.lineTo(p.x, p.y);
+      });
+      pen.stroke();
+      pen.textAlign = 'center';
+      points.forEach((p, i) => {                                                      // value above bars, dots on the line, names below
+        pen.fillStyle = color;
+        if (type === 'line') { pen.beginPath(); pen.arc(p.x, p.y, 3.5, 0, 7); pen.fill(); }
+        pen.fillStyle = '#5b5a8a';
+        pen.textBaseline = 'bottom';
+        if (type === 'bar') pen.fillText(values[i], p.x, p.y - 3);
+        pen.textBaseline = 'top';
+        if (i % Math.ceil(values.length / 8) === 0) pen.fillText(labels[i], p.x, top + height + 8);
+      });
+    }
+    function showLists() {             // the three tables: vehicles, refuelling records, expenses
+      byId('vehicleList').innerHTML = table(['Reg / ID', 'Make / model', 'Type', 'Fuel', 'Notes', 'Status', ''],
+        data.vehicles.map(v => [safe(v.reg), safe(v.model), v.type, v.fuel, safe(v.notes), v.active ? 'Active' : '<span class="bad">Deactivated</span>',
+          '<button onclick="editVehicle(\'' + v.id + '\')">Edit</button> <button onclick="toggleVehicle(\'' + v.id + '\')">' + (v.active ? 'Deactivate' : 'Reactivate') + '</button>']));
+      const rows = calculateRefuels().filter(passesFilter).sort((a, b) => b.dateTime.localeCompare(a.dateTime));   // newest first
+      byId('refuelList').innerHTML = table(['Date', 'Vehicle', 'Odometer', 'Distance', 'Litres', 'Price', 'Calc. total', 'Receipt', 'km/L', 'Rs/km', ''],
+        rows.map(row => {
+          const calculated = row.litres * row.price;
+          const wrong = Math.abs(calculated - row.total) > calculated * 0.01;        // receipt differs from litres x price
+          return [row.dateTime.replace('T', ' '), safe(getVehicle(row.vehicleId).reg), num(row.odometer), row.distance === null ? 'N/A' : num(row.distance),
+            num(row.litres, 2) + (row.fullTank ? '' : ' (part)'), num(row.price, 2), num(calculated), wrong ? '<span class="bad">' + num(row.total) + '</span>' : num(row.total),
+            row.economy !== null ? num(row.economy, 2) : (row.distance === null ? 'N/A (first)' : '-'), row.costPerKm !== null ? num(row.costPerKm, 2) : '-',
+            '<button onclick="deleteItem(\'refuels\', \'' + row.id + '\')">Delete</button>'];
+        }));
+      const expenses = data.expenses.filter(passesFilter).sort((a, b) => b.date.localeCompare(a.date));
+      byId('expenseList').innerHTML = table(['Date', 'Vehicle', 'Category', 'Amount', 'Notes', ''],
+        expenses.map(e => [e.date, safe(getVehicle(e.vehicleId).reg), e.category, 'Rs ' + num(e.amount), safe(e.notes),
+          '<button onclick="deleteItem(\'expenses\', \'' + e.id + '\')">Delete</button>'])) + '<p><b>Total: Rs ' + num(sumOf(expenses, 'amount')) + '</b></p>';
+    }
+    function deleteItem(listName, id) {   // deletes one record from data.refuels or data.expenses
+      if (confirm('Delete this record?')) data[listName] = data[listName].filter(item => item.id !== id);
+      update();
+    }
+    /* ---------- 5. VEHICLES: add, edit, deactivate ---------- */
+    byId('vehicleForm').onsubmit = function (event) {
+      event.preventDefault();                        // stop the page from reloading
+      const id = byId('vehicleId').value;            // empty when adding a new vehicle
+      const reg = byId('vehicleReg').value.trim();
+      if (data.vehicles.find(v => v.reg.toLowerCase() === reg.toLowerCase() && v.id !== id)) return alert('A vehicle with this registration already exists.');
+      const details = { reg: reg, model: byId('vehicleModel').value.trim(), type: byId('vehicleType').value, fuel: byId('vehicleFuel').value, notes: byId('vehicleNotes').value.trim() };
+      if (id) Object.assign(getVehicle(id), details);                                                // editing
+      else data.vehicles.push(Object.assign({ id: 'v' + Date.now(), active: true }, details));       // adding
+      byId('vehicleCancel').click();                 // clears the form
+      update();
+    };
+    byId('vehicleCancel').onclick = function () {
+      byId('vehicleForm').reset();
+      byId('vehicleId').value = '';
+      byId('vehicleTitle').textContent = 'Add vehicle';
+    };
+    function editVehicle(id) {         // puts a vehicle's details back in the form
+      const v = getVehicle(id);
+      byId('vehicleId').value = id;
+      ['Reg', 'Model', 'Type', 'Fuel', 'Notes'].forEach(field => byId('vehicle' + field).value = v[field.toLowerCase()]);
+      byId('vehicleTitle').textContent = 'Edit vehicle';
+    }
+    function toggleVehicle(id) { getVehicle(id).active = !getVehicle(id).active; update(); }      // Active <-> Deactivated (history is kept)
+    /* ---------- 6. REFUELLING: add with checks ---------- */
+    let receiptTyped = false;          // the receipt total fills itself (litres x price) until the user types their own
+    byId('refuelTotal').oninput = () => receiptTyped = true;
+    byId('refuelLitres').oninput = byId('refuelPrice').oninput = function () {
+      const calculated = Math.round(byId('refuelLitres').value * byId('refuelPrice').value);
+      byId('refuelCalc').textContent = calculated ? 'Calculated: Rs ' + num(calculated) : '';
+      if (!receiptTyped) byId('refuelTotal').value = calculated || '';
+    };
+    byId('refuelForm').onsubmit = function (event) {
+      event.preventDefault();
+      const vehicleId = byId('refuelVehicle').value, dateTime = byId('refuelDate').value;
+      const odometer = Number(byId('refuelOdo').value), litres = Number(byId('refuelLitres').value), price = Number(byId('refuelPrice').value);
+      const calculated = Math.round(litres * price);
+      const total = byId('refuelTotal').value === '' ? calculated : Number(byId('refuelTotal').value);
+      // CHECK 1 and 2: numbers must be positive, date cannot be in the future
+      if (litres <= 0 || price <= 0 || odometer <= 0 || total <= 0) return alert('Litres, price, odometer and amount must be positive.');
+      if (new Date(dateTime) > new Date()) return alert('Refuelling date cannot be in the future.');
+      const mine = data.refuels.filter(r => r.vehicleId === vehicleId).sort((a, b) => a.dateTime.localeCompare(b.dateTime));
+      const before = mine.filter(r => r.dateTime <= dateTime).pop(), after = mine.filter(r => r.dateTime > dateTime)[0];
+      // CHECK 3 and 4: odometer must fit between the earlier and later readings
+      if (before && odometer <= before.odometer && !confirm('Suspicious: odometer ' + odometer + ' is not higher than the previous reading (' + before.odometer + '). Save anyway?')) return;
+      if (after && odometer >= after.odometer && !confirm('Suspicious: odometer ' + odometer + ' is not lower than the next reading (' + after.odometer + '). Save anyway?')) return;
+      // CHECK 5: receipt amount should match litres x price (1% difference allowed)
+      if (Math.abs(total - calculated) > calculated * 0.01 && !confirm('Receipt Rs ' + num(total) + ' differs from calculated Rs ' + num(calculated) + '. Keep the receipt amount?')) return;
+      data.refuels.push({ id: 'r' + Date.now(), vehicleId: vehicleId, dateTime: dateTime, odometer: odometer, litres: litres, price: price, total: total, fullTank: byId('refuelFull').value === 'yes' });
+      byId('refuelLitres').value = byId('refuelOdo').value = byId('refuelTotal').value = byId('refuelCalc').textContent = '';   // clear for the next entry
+      receiptTyped = false;
+      update();
+    };
+    byId('expenseForm').onsubmit = function (event) {
+      event.preventDefault();
+      data.expenses.push({ id: 'e' + Date.now(), vehicleId: byId('expenseVehicle').value, date: byId('expenseDate').value, category: byId('expenseCategory').value,
+                           amount: Number(byId('expenseAmount').value), notes: byId('expenseNotes').value.trim() });
+      byId('expenseAmount').value = byId('expenseNotes').value = '';
+      update();
+    };
+    /* ---------- 7. EXPENSES AND EXPORT TO CSV (opens in Excel) ---------- */
+    function downloadCsv(headings, rows, filename) {        // rows = list of lists
+      const text = [headings].concat(rows).map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\n');
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
+      link.download = filename;
+      link.click();
+    }
+    byId('exportRefuels').onclick = function () {
+      const rows = calculateRefuels().filter(passesFilter).map(r => [r.dateTime, getVehicle(r.vehicleId).reg, r.odometer, r.distance === null ? 'N/A' : r.distance,
+        r.litres, r.price, Math.round(r.litres * r.price), r.total, r.fullTank ? 'Yes' : 'No', r.economy === null ? 'N/A' : num(r.economy, 2), r.costPerKm === null ? 'N/A' : num(r.costPerKm, 2)]);
+      downloadCsv(['Date', 'Vehicle', 'Odometer', 'Distance km', 'Litres', 'Price/L', 'Calculated total', 'Receipt total', 'Full tank', 'km/L', 'Rs/km'], rows, 'refuels.csv');
+    };
+    byId('exportExpenses').onclick = () => downloadCsv(['Date', 'Vehicle', 'Category', 'Amount', 'Notes'],
+      data.expenses.filter(passesFilter).map(e => [e.date, getVehicle(e.vehicleId).reg, e.category, e.amount, e.notes]), 'expenses.csv');
+    /* ---------- 8. MENU, FILTERS AND START ---------- */
+    const menuButtons = document.querySelectorAll('nav button');
+    menuButtons.forEach(button => button.onclick = function () {      // show the chosen screen, hide the others
+      menuButtons.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      button.classList.add('active');
+      byId(button.dataset.tab).classList.add('active');
+      renderAll();                     // so the charts get the right size
+    });
+    byId('filterVehicle').onchange = byId('filterFrom').onchange = byId('filterTo').onchange = renderAll;
+    document.querySelectorAll('.date-wrap input').forEach(input => input.oninput = renderAll);
+    byId('clearFilters').onclick = () => { byId('filterVehicle').value = byId('filterFrom').value = byId('filterTo').value = ''; renderAll(); };
+    byId('printBtn').onclick = () => window.print();
+    byId('resetDemo').onclick = function () {
+      if (!confirm('Replace all data with the demo data?')) return;
+      randomSeed = 7;
+      data = demoData();
+      update();
+    };
+    window.addEventListener('resize', showDashboard);                 // redraw the charts when the window size changes
+    renderAll();                                                      // START: draw everything for the first time
+    </script>
+</body>
+</html>
